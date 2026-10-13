@@ -14,11 +14,41 @@
 
   $('cur').textContent = money(0).replace(/[\d.,\s]+$/, '') || '₹';
 
-  // ---------- photo: shrink big phone photos before upload ----------
+  // ---------- photo ----------
+  // Phones with little memory crash ("Aw, Snap!") if a full-size camera photo is decoded, so:
+  //  - the in-app camera grabs a video frame (about 2 megapixels) instead of a 12-50 MP photo
+  //  - big photos picked from the gallery are decoded already shrunk
+
+  const MAX_SIDE = 1600;
+
+  function toJpeg(src, maxSide, quality) {
+    const w = src.videoWidth || src.width || src.naturalWidth;
+    const hgt = src.videoHeight || src.height || src.naturalHeight;
+    const scale = Math.min(1, maxSide / Math.max(w, hgt));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * scale));
+    c.height = Math.max(1, Math.round(hgt * scale));
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    return { url: c.toDataURL('image/jpeg', quality), canvas: c };
+  }
+
+  function makePhotoData(src) {
+    const big = toJpeg(src, MAX_SIDE, 0.82);
+    const small = toJpeg(big.canvas, 240, 0.7);
+    big.canvas.width = big.canvas.height = 0; // give the memory back
+    return { photo: big.url, thumb: small.url };
+  }
 
   async function loadBitmap(file) {
     if (window.createImageBitmap) {
-      try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* fall back */ }
+      try {
+        const opts = { imageOrientation: 'from-image' };
+        if (file.size > 700 * 1024) Object.assign(opts, { resizeWidth: MAX_SIDE, resizeQuality: 'medium' });
+        return await createImageBitmap(file, opts);
+      } catch { /* fall back */ }
     }
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -28,26 +58,14 @@
     });
   }
 
-  function drawScaled(src, maxSide, quality) {
-    const w = src.width || src.naturalWidth;
-    const hgt = src.height || src.naturalHeight;
-    const scale = Math.min(1, maxSide / Math.max(w, hgt));
-    const c = document.createElement('canvas');
-    c.width = Math.max(1, Math.round(w * scale));
-    c.height = Math.max(1, Math.round(hgt * scale));
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(src, 0, 0, c.width, c.height);
-    return c.toDataURL('image/jpeg', quality);
-  }
-
   async function onPhoto(file) {
     if (!file) return;
     try {
       const bmp = await loadBitmap(file);
-      photoData = { photo: drawScaled(bmp, 1600, 0.82), thumb: drawScaled(bmp, 240, 0.7) };
+      photoData = makePhotoData(bmp);
+      if (bmp.close) bmp.close();
       showPhoto();
+      saveDraft();
     } catch {
       photoData = null;
       showPhoto();
@@ -65,13 +83,93 @@
     $('photoActions').hidden = !has;
     $('galleryRow').hidden = has;
     if (has) pick.prepend(h('img', { src: photoData.photo, alt: 'Your photo' }));
-    $('photo').value = '';
+    $('photoCapture').value = '';
     $('photoGallery').value = '';
   }
 
-  $('photo').addEventListener('change', (e) => onPhoto(e.target.files[0]));
+  // ---- in-app camera: live preview + shutter, so she never leaves the page ----
+  let stream = null;
+
+  function closeCamera() {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+    $('camVideo').srcObject = null;
+    $('cam').hidden = true;
+  }
+
+  async function openCamera() {
+    if (photoData) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast('Please use "Use phone camera app" or "Choose from gallery" below the photo box.');
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      });
+    } catch {
+      toast('The camera is blocked. Allow it in the browser, or use "Use phone camera app" below.', true);
+      return;
+    }
+    const v = $('camVideo');
+    v.srcObject = stream;
+    $('cam').hidden = false;
+    try { await v.play(); } catch { /* autoplay is already on */ }
+  }
+
+  $('photoPick').addEventListener('click', openCamera);
+  $('camCancel').addEventListener('click', closeCamera);
+  $('camShutter').addEventListener('click', () => {
+    const v = $('camVideo');
+    if (!v.videoWidth) return; // camera not ready yet
+    photoData = makePhotoData(v);
+    closeCamera();
+    showPhoto();
+    saveDraft();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('cam').hidden) closeCamera(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) closeCamera(); });
+  window.addEventListener('pagehide', closeCamera);
+
+  $('photoCapture').addEventListener('change', (e) => onPhoto(e.target.files[0]));
   $('photoGallery').addEventListener('change', (e) => onPhoto(e.target.files[0]));
-  $('removePhoto').addEventListener('click', () => { photoData = null; showPhoto(); });
+  $('removePhoto').addEventListener('click', () => { photoData = null; showPhoto(); saveDraft(); });
+
+  // ---------- draft: survive a page reload (typed text + photo) ----------
+
+  const DRAFT_KEY = 'expense-draft-v1';
+
+  function saveDraft() {
+    const draft = { savedAt: Date.now(), amount: $('amount').value, note: $('note').value, date: $('date').value };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...draft, photoData }));
+    } catch {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* storage unavailable */ }
+    }
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+  }
+
+  function restoreDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch { /* none */ }
+    if (!d || Date.now() - d.savedAt > 12 * 3600 * 1000) return;
+    $('amount').value = d.amount || '';
+    $('note').value = d.note || '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d.date || '') && d.date <= App.todayStr()) setDate(d.date);
+    const p = d.photoData;
+    if (p && typeof p.photo === 'string' && p.photo.startsWith('data:image/jpeg;base64,')) {
+      photoData = { photo: p.photo, thumb: typeof p.thumb === 'string' ? p.thumb : null };
+      showPhoto();
+    }
+  }
+
+  $('amount').addEventListener('input', saveDraft);
+  $('note').addEventListener('input', saveDraft);
+
 
   // ---------- date ----------
 
@@ -85,7 +183,7 @@
     d.hidden = !d.hidden;
     if (!d.hidden) { d.max = App.todayStr(); d.focus(); }
   });
-  $('date').addEventListener('change', (e) => setDate(e.target.value || App.todayStr()));
+  $('date').addEventListener('change', (e) => { setDate(e.target.value || App.todayStr()); saveDraft(); });
 
   // ---------- form ----------
 
@@ -127,6 +225,7 @@
         }),
       });
       freshId = expense.id;
+      clearDraft();
       $('amount').value = '';
       $('note').value = '';
       photoData = null;
@@ -202,5 +301,6 @@
     }
   }
 
+  restoreDraft();
   load();
 })();

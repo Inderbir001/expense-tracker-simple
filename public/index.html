@@ -25,15 +25,17 @@
       <form id="form" class="card" novalidate>
         <div class="field">
           <span class="label">Photo <span class="opt">(bill, item, anything)</span></span>
-          <label class="photo-pick" id="photoPick">
+          <button type="button" class="photo-pick" id="photoPick">
             <span class="big" aria-hidden="true">&#128247;</span>
             <span class="t">Tap to take a photo</span>
-            <input type="file" id="photo" accept="image/*" capture="environment" aria-label="Take a photo">
-          </label>
+          </button>
           <div class="gallery-row" id="galleryRow">
-            <label class="link" for="photoGallery">or choose from gallery</label>
-            <input type="file" id="photoGallery" accept="image/*" hidden>
+            <label class="link" for="photoCapture">Use phone camera app</label>
+            <span class="muted" aria-hidden="true">&middot;</span>
+            <label class="link" for="photoGallery">Choose from gallery</label>
           </div>
+          <input type="file" id="photoCapture" accept="image/*" capture="environment" hidden>
+          <input type="file" id="photoGallery" accept="image/*" hidden>
           <div class="photo-actions" id="photoActions" hidden>
             <span class="muted small">Photo added</span>
             <button type="button" class="link danger" id="removePhoto">Remove photo</button>
@@ -80,5 +82,13 @@
 
   <script src="/common.js"></script>
   <script src="/mom.js"></script>
+  <div id="cam" class="cam" hidden role="dialog" aria-label="Camera">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div class="cam-bar">
+      <button type="button" class="cam-cancel" id="camCancel">Cancel</button>
+      <button type="button" class="cam-shutter" id="camShutter" aria-label="Take photo"></button>
+      <span class="cam-spacer"></span>
+    </div>
+  </div>
 </body>
 </html>
