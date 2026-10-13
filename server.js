@@ -66,11 +66,11 @@ http
       .filter((i) => i && i.family === 'IPv4' && !i.internal)
       .map((i) => i.address);
     const hosts = ['localhost', ...ips];
-    console.log('\n  Mom\'s Expense Tracker is running\n');
-    console.log('  Mom opens (once, then bookmark / add to home screen):');
-    hosts.forEach((h) => console.log(`    http://${h}:${PORT}/?key=${config.accessKey}`));
-    console.log('\n  You open the dashboard:');
-    hosts.forEach((h) => console.log(`    http://${h}:${PORT}/admin`));
-    console.log(`    PIN: ${config.adminPin}`);
+    console.log('\n  Family Expense Tracker is running\n');
+    console.log('  Everyone opens the same address, taps their name and enters their PIN:');
+    hosts.forEach((h) => console.log(`    http://${h}:${PORT}/`));
+    console.log('\n  You sign in as "Admin" on that same page, with this PIN:');
+    console.log(`    ${config.adminPin}`);
+    console.log('  Then add family members from the admin dashboard.');
     console.log(`\n  Data is saved in: ${DATA_DIR}\n`);
   });

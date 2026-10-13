@@ -1,5 +1,5 @@
 'use strict';
-// Small helpers shared by Mom's page and the dashboard.
+// Small helpers shared by the family page and the admin dashboard.
 
 const App = (() => {
   let cfg = { currency: '₹', locale: 'en-IN' };
@@ -12,6 +12,7 @@ const App = (() => {
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const todayStr = () => ymd(new Date());
   const parseYmd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const sum = (list) => list.reduce((s, e) => s + e.amount, 0);
 
   function money(n) {
     const v = Number(n) || 0;
@@ -29,6 +30,40 @@ const App = (() => {
     return d.toLocaleDateString(undefined, {
       weekday: short ? undefined : 'short', day: 'numeric', month: 'short', year: sameYear ? undefined : 'numeric',
     });
+  }
+
+  // '2026-10' -> 'October 2026'
+  function monthLabel(m, { short = false } = {}) {
+    const [y, mo] = m.split('-').map(Number);
+    return new Date(y, mo - 1, 1).toLocaleDateString(undefined, { month: short ? 'short' : 'long', year: short ? '2-digit' : 'numeric' });
+  }
+
+  const addMonths = (m, by) => {
+    const [y, mo] = m.split('-').map(Number);
+    return ymd(new Date(y, mo - 1 + by, 1)).slice(0, 7);
+  };
+
+  // Everything the budget screens need, for one person's expenses and their monthly budget.
+  function budgetStats(expenses, budget, month = todayStr().slice(0, 7), today = todayStr()) {
+    const [y, mo] = month.split('-').map(Number);
+    const days = new Date(y, mo, 0).getDate();
+    const isCurrent = month === today.slice(0, 7);
+    const elapsed = isCurrent ? Number(today.slice(8, 10)) : days; // days gone, including today
+    const inMonth = expenses.filter((e) => e.date.startsWith(month));
+    const spent = sum(inMonth);
+    const left = budget - spent;
+    const daysLeft = isCurrent ? days - elapsed + 1 : 0;
+    return {
+      month, budget, spent, left, days, elapsed, daysLeft, isCurrent,
+      count: inMonth.length,
+      todaySpent: sum(expenses.filter((e) => e.date === today)),
+      hasBudget: budget > 0,
+      over: budget > 0 && left < 0,
+      pct: budget > 0 ? (spent / budget) * 100 : 0,
+      perDayLeft: left > 0 && daysLeft > 0 ? left / daysLeft : 0,
+      avgPerDay: spent / Math.max(1, elapsed),
+      projected: (spent / Math.max(1, elapsed)) * days,
+    };
   }
 
   async function api(url, opts = {}) {
@@ -78,11 +113,10 @@ const App = (() => {
     }
     el.textContent = msg;
     el.classList.toggle('bad', bad);
-    // force reflow so the transition replays
-    void el.offsetWidth;
+    void el.offsetWidth; // replay the transition
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), bad ? 5000 : 2600);
+    toastTimer = setTimeout(() => el.classList.remove('show'), bad ? 5000 : 3200);
   }
 
   function viewPhoto(src, caption) {
@@ -97,7 +131,7 @@ const App = (() => {
     dlg.showModal();
   }
 
-  // One expense row, used by both pages. opts.onDelete shows a Remove button.
+  // One expense row. opts: onDelete (shows Remove), showDate (default true), showMember (admin view).
   function entryRow(e, opts = {}) {
     const thumb = e.thumb
       ? h('button', {
@@ -105,16 +139,21 @@ const App = (() => {
           onclick: () => viewPhoto(e.photo || e.thumb, [e.note, money(e.amount)].filter(Boolean).join(' — ')),
         })
       : h('div', { class: 'thumb none', 'aria-hidden': 'true' }, '\u{1F9FE}');
+    const when = [opts.showMember ? e.memberName : null, opts.showDate === false ? null : prettyDate(e.date)]
+      .filter(Boolean).join(' · ');
     return h('div', { class: 'entry' + (opts.fresh ? ' fresh' : '') },
       thumb,
       h('div', { class: 'body' },
         h('div', { class: 'note' + (e.note ? '' : ' empty') }, e.note || 'No note'),
-        h('div', { class: 'when' }, opts.showDate === false ? '' : prettyDate(e.date)),
+        h('div', { class: 'when' }, when),
         opts.onDelete ? h('button', { class: 'link danger small', onclick: () => opts.onDelete(e) }, 'Remove') : null,
       ),
       h('div', { class: 'amt' }, money(e.amount)),
     );
   }
 
-  return { ready, money, api, h, toast, viewPhoto, entryRow, ymd, todayStr, parseYmd, prettyDate };
+  return {
+    ready, money, api, h, toast, viewPhoto, entryRow, ymd, todayStr, parseYmd, prettyDate,
+    monthLabel, addMonths, budgetStats, sum,
+  };
 })();

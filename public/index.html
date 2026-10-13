@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Expenses</title>
+  <title>Family Expenses</title>
   <meta name="theme-color" content="#1f7a4d">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/png" href="/icon-192.png">
@@ -11,77 +11,146 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="wrap">
-    <header class="top">
-      <h1>My Expenses</h1>
-    </header>
 
-    <div id="locked" class="card" hidden>
-      <h2>Please open your link</h2>
-      <p class="muted">This page needs the special link that was sent to you. Open that link once and this page will work from then on.</p>
-    </div>
+  <!-- ===== sign in: tap your name, enter your PIN ===== -->
+  <div id="viewLogin" class="wrap" hidden>
+    <header class="top"><h1>Family Expenses</h1></header>
 
-    <main id="app">
-      <form id="form" class="card" novalidate>
-        <div class="field">
-          <span class="label">Photo <span class="opt">(bill, item, anything)</span></span>
-          <button type="button" class="photo-pick" id="photoPick">
-            <span class="big" aria-hidden="true">&#128247;</span>
-            <span class="t">Tap to take a photo</span>
-          </button>
-          <div class="gallery-row" id="galleryRow">
-            <label class="link" for="photoCapture">Use phone camera app</label>
-            <span class="muted" aria-hidden="true">&middot;</span>
-            <label class="link" for="photoGallery">Choose from gallery</label>
-          </div>
-          <input type="file" id="photoCapture" accept="image/*" capture="environment" hidden>
-          <input type="file" id="photoGallery" accept="image/*" hidden>
-          <div class="photo-actions" id="photoActions" hidden>
-            <span class="muted small">Photo added</span>
-            <button type="button" class="link danger" id="removePhoto">Remove photo</button>
-          </div>
-        </div>
+    <section class="card" id="pickCard">
+      <h2>Who are you?</h2>
+      <div id="people" class="people"></div>
+      <p class="muted empty-hint" id="noPeople" hidden>No one has been added yet. The admin needs to add family members first.</p>
+      <div class="center"><button type="button" class="link" id="adminLink">I'm the admin</button></div>
+    </section>
 
-        <label class="field" for="amount">
-          <span class="label">How much?</span>
-          <span class="money">
-            <span class="cur" id="cur">&#8377;</span>
-            <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0">
-          </span>
-        </label>
-
-        <label class="field" for="note">
-          <span class="label">Note <span class="opt">(if you want)</span></span>
-          <textarea id="note" rows="2" maxlength="500" placeholder="e.g. Vegetables from the market"></textarea>
-        </label>
-
-        <div class="date-row">
-          <span>Date: <strong id="dateLabel">Today</strong></span>
-          <button type="button" class="link" id="changeDate">Change</button>
-          <input type="date" id="date" hidden aria-label="Date of expense">
-        </div>
-
-        <p class="error" id="error" role="alert" hidden></p>
-        <button type="submit" class="btn" id="save">Save expense</button>
-      </form>
-
-      <section class="card" id="summaryCard" hidden>
-        <div class="summary">
-          <div><div class="v" id="todayTotal"></div><div class="k">Today</div></div>
-          <div><div class="v" id="monthTotal"></div><div class="k">This month</div></div>
-        </div>
-      </section>
-
-      <section class="card" id="listCard" hidden>
-        <h2>My recent expenses</h2>
-        <div id="list"></div>
-        <button class="btn ghost" id="more" hidden>Show more</button>
-      </section>
-    </main>
+    <form class="card" id="pinCard" hidden>
+      <h2 id="pinWho"></h2>
+      <label class="field" for="pin">
+        <span class="label">Your PIN</span>
+        <input type="password" id="pin" inputmode="numeric" autocomplete="current-password" maxlength="12" placeholder="&bull;&bull;&bull;&bull;">
+      </label>
+      <p class="error" id="pinError" role="alert" hidden></p>
+      <button class="btn" type="submit" id="pinGo">Open</button>
+      <div class="center"><button type="button" class="link" id="pinBack">Not me</button></div>
+    </form>
   </div>
 
-  <script src="/common.js"></script>
-  <script src="/mom.js"></script>
+  <!-- ===== the app ===== -->
+  <div id="viewApp" hidden>
+    <header class="appbar">
+      <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <h1 id="appTitle">Add expense</h1>
+      <span class="who-chip" id="whoChip"></span>
+    </header>
+
+    <div class="drawer" id="drawer" hidden>
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+      <nav class="drawer-panel" aria-label="Menu">
+        <div class="drawer-head">
+          <div class="avatar" id="drawerAvatar"></div>
+          <div>
+            <strong id="drawerName"></strong>
+            <div class="muted small" id="drawerBudget"></div>
+          </div>
+        </div>
+        <a href="#add" data-page="add"><span class="ico">&#10133;</span> Add expense</a>
+        <a href="#list" data-page="list"><span class="ico">&#129534;</span> My expenses</a>
+        <a href="#budget" data-page="budget"><span class="ico">&#128176;</span> My budget</a>
+        <button type="button" class="signout" id="signOut"><span class="ico">&#128682;</span> Sign out</button>
+      </nav>
+    </div>
+
+    <div class="wrap">
+
+      <!-- ---- add ---- -->
+      <main id="pageAdd">
+        <a href="#budget" class="card mini-budget" id="miniBudget" hidden></a>
+
+        <form id="form" class="card" novalidate>
+          <div class="field">
+            <span class="label">Photo <span class="opt">(bill, item, anything)</span></span>
+            <button type="button" class="photo-pick" id="photoPick">
+              <span class="big" aria-hidden="true">&#128247;</span>
+              <span class="t">Tap to take a photo</span>
+            </button>
+            <div class="gallery-row" id="galleryRow">
+              <label class="link" for="photoCapture">Use phone camera app</label>
+              <label class="link" for="photoGallery">Choose from gallery</label>
+            </div>
+            <input type="file" id="photoCapture" accept="image/*" capture="environment" hidden>
+            <input type="file" id="photoGallery" accept="image/*" hidden>
+            <div class="photo-actions" id="photoActions" hidden>
+              <span class="muted small">Photo added</span>
+              <button type="button" class="link danger" id="removePhoto">Remove photo</button>
+            </div>
+          </div>
+
+          <label class="field" for="amount">
+            <span class="label">How much?</span>
+            <span class="money">
+              <span class="cur" id="cur">&#8377;</span>
+              <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0">
+            </span>
+          </label>
+
+          <label class="field" for="note">
+            <span class="label">Note <span class="opt">(if you want)</span></span>
+            <textarea id="note" rows="2" maxlength="500" placeholder="e.g. Vegetables from the market"></textarea>
+          </label>
+
+          <div class="date-row">
+            <span>Date: <strong id="dateLabel">Today</strong></span>
+            <button type="button" class="link" id="changeDate">Change</button>
+            <input type="date" id="date" hidden aria-label="Date of expense">
+          </div>
+
+          <p class="error" id="error" role="alert" hidden></p>
+          <button type="submit" class="btn" id="save">Save expense</button>
+        </form>
+
+        <section class="card" id="recentCard" hidden>
+          <h2>My recent expenses</h2>
+          <div id="recent"></div>
+          <a class="btn ghost" href="#list" id="seeAll" hidden>See all my expenses</a>
+        </section>
+      </main>
+
+      <!-- ---- my expenses ---- -->
+      <main id="pageList" hidden>
+        <section class="card">
+          <div class="monthbar">
+            <button class="iconbtn" id="prevMonth" aria-label="Previous month">&#8249;</button>
+            <h2 id="listMonth"></h2>
+            <button class="iconbtn" id="nextMonth" aria-label="Next month">&#8250;</button>
+          </div>
+          <div class="summary">
+            <div><div class="v" id="listTotal"></div><div class="k">Spent</div></div>
+            <div><div class="v" id="listCount"></div><div class="k">Entries</div></div>
+          </div>
+        </section>
+        <section class="card">
+          <div id="listEntries"></div>
+        </section>
+      </main>
+
+      <!-- ---- my budget ---- -->
+      <main id="pageBudget" hidden>
+        <section class="card budget-hero" id="budgetHero"></section>
+        <section class="card">
+          <div class="statgrid" id="budgetGrid"></div>
+        </section>
+        <section class="card">
+          <h2>Last 6 months</h2>
+          <div id="history"></div>
+        </section>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ===== in-app camera ===== -->
   <div id="cam" class="cam" hidden role="dialog" aria-label="Camera">
     <video id="camVideo" autoplay playsinline muted></video>
     <div class="cam-bar">
@@ -90,5 +159,8 @@
       <span class="cam-spacer"></span>
     </div>
   </div>
+
+  <script src="/common.js"></script>
+  <script src="/member.js"></script>
 </body>
 </html>

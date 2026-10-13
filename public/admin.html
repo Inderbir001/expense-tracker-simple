@@ -3,77 +3,108 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Expense Dashboard</title>
+  <title>Admin Dashboard</title>
   <meta name="theme-color" content="#1f7a4d">
   <link rel="icon" type="image/png" href="/icon-192.png">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="wrap wide">
-    <section id="login" class="card login" hidden>
-      <h1>Dashboard</h1>
-      <p class="muted">Enter your PIN to see the expenses.</p>
-      <form id="loginForm">
-        <label class="field" for="pin">
-          <span class="label">PIN</span>
-          <input type="password" id="pin" inputmode="numeric" autocomplete="current-password">
-        </label>
-        <p class="error" id="loginError" role="alert" hidden></p>
-        <button class="btn" type="submit">Open</button>
+  <div class="wrap wide" id="dash" hidden>
+    <header class="top">
+      <h1>Admin Dashboard</h1>
+      <button class="link" id="logout">Sign out</button>
+    </header>
+
+    <!-- who to look at -->
+    <div class="chips" id="chips" role="tablist" aria-label="Show expenses of"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">Today</div><div class="v" id="sToday"></div></div>
+      <div class="stat"><div class="k">This week</div><div class="v" id="sWeek"></div></div>
+      <div class="stat"><div class="k">This month</div><div class="v" id="sMonth"></div></div>
+      <div class="stat primary"><div class="k">Total so far</div><div class="v" id="sAll"></div></div>
+    </div>
+
+    <!-- budgets -->
+    <section class="card">
+      <div class="monthbar">
+        <button class="iconbtn" id="prev" aria-label="Previous month">&#8249;</button>
+        <h2 id="monthName"></h2>
+        <button class="iconbtn" id="next" aria-label="Next month">&#8250;</button>
+      </div>
+      <h3 class="sub">Budgets</h3>
+      <div id="budgets"></div>
+    </section>
+
+    <!-- chart -->
+    <section class="card">
+      <div class="kpis">
+        <div><div class="k">Spent</div><div class="v" id="kTotal"></div></div>
+        <div><div class="k">Entries</div><div class="v" id="kCount"></div></div>
+        <div><div class="k">Average per day</div><div class="v" id="kAvg"></div></div>
+        <div><div class="k">Biggest</div><div class="v" id="kMax"></div></div>
+      </div>
+      <div class="chart" id="chart" aria-label="Daily spending"></div>
+      <div class="chart-labels" id="chartLabels" aria-hidden="true"></div>
+      <div class="readout" id="readout"></div>
+    </section>
+
+    <!-- expenses -->
+    <section class="card">
+      <h2 id="listTitle">Expenses</h2>
+      <div id="entries"></div>
+    </section>
+
+    <section class="card months" id="monthsCard" hidden>
+      <h2>Month by month</h2>
+      <div id="months"></div>
+    </section>
+
+    <!-- family members -->
+    <section class="card" id="membersCard">
+      <h2>Family members</h2>
+      <p class="muted small">Everyone opens the same website address, taps their name and enters their own PIN. They only see their own expenses and budget.</p>
+      <div id="memberList"></div>
+
+      <form id="addForm" class="addform" novalidate>
+        <h3 class="sub">Add a family member</h3>
+        <div class="grid3">
+          <label class="field"><span class="label">Name</span><input type="text" id="mName" maxlength="30" autocomplete="off" placeholder="e.g. Amma"></label>
+          <label class="field"><span class="label">PIN (4 to 8 digits)</span><input type="text" id="mPin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="e.g. 1234"></label>
+          <label class="field"><span class="label">Monthly budget</span><input type="text" id="mBudget" inputmode="decimal" autocomplete="off" placeholder="e.g. 5000"></label>
+        </div>
+        <p class="error" id="addError" role="alert" hidden></p>
+        <button class="btn" type="submit" id="addBtn">Add family member</button>
       </form>
     </section>
 
-    <div id="dash" hidden>
-      <header class="top">
-        <h1>Expense Dashboard</h1>
-        <button class="link" id="logout">Sign out</button>
-      </header>
-
-      <div class="stats">
-        <div class="stat"><div class="k">Today</div><div class="v" id="sToday"></div></div>
-        <div class="stat"><div class="k">This week</div><div class="v" id="sWeek"></div></div>
-        <div class="stat"><div class="k">This month</div><div class="v" id="sMonth"></div></div>
-        <div class="stat primary"><div class="k">Total so far</div><div class="v" id="sAll"></div></div>
+    <section class="card">
+      <h2>Share</h2>
+      <p class="muted small">Send this one address to the family. Each person taps their name and enters their PIN. Once signed in they stay signed in.</p>
+      <div class="linkbox">
+        <input type="text" id="siteLink" readonly aria-label="Website address">
+        <button class="btn small" id="copy">Copy</button>
       </div>
-
-      <section class="card">
-        <div class="monthbar">
-          <button class="iconbtn" id="prev" aria-label="Previous month">&#8249;</button>
-          <h2 id="monthName"></h2>
-          <button class="iconbtn" id="next" aria-label="Next month">&#8250;</button>
-        </div>
-        <div class="kpis">
-          <div><div class="k">Spent</div><div class="v" id="kTotal"></div></div>
-          <div><div class="k">Entries</div><div class="v" id="kCount"></div></div>
-          <div><div class="k">Average per day</div><div class="v" id="kAvg"></div></div>
-          <div><div class="k">Biggest</div><div class="v" id="kMax"></div></div>
-        </div>
-        <div class="chart" id="chart" aria-label="Daily spending"></div>
-        <div class="chart-labels" id="chartLabels" aria-hidden="true"></div>
-        <div class="readout" id="readout"></div>
-      </section>
-
-      <section class="card">
-        <h2 id="listTitle">Expenses</h2>
-        <div id="entries"></div>
-      </section>
-
-      <section class="card months" id="monthsCard" hidden>
-        <h2>Month by month</h2>
-        <div id="months"></div>
-      </section>
-
-      <section class="card">
-        <h2>Mom's link</h2>
-        <p class="muted small">Send this to Mom once. When she opens it, her phone remembers it. Don't share it with anyone else.</p>
-        <div class="linkbox">
-          <input type="text" id="momLink" readonly aria-label="Mom's link">
-          <button class="btn small" id="copy">Copy</button>
-        </div>
-        <p style="margin:16px 0 0"><a class="link" href="/api/admin/export">Download everything as a spreadsheet (CSV)</a></p>
-      </section>
-    </div>
+      <p style="margin:16px 0 0"><a class="link" href="/api/admin/export">Download everything as a spreadsheet (CSV)</a></p>
+    </section>
   </div>
+
+  <!-- edit a member -->
+  <dialog id="editDlg" class="editdlg">
+    <form id="editForm" method="dialog" novalidate>
+      <h2 id="editTitle">Edit</h2>
+      <label class="field"><span class="label">Name</span><input type="text" id="eName" maxlength="30" autocomplete="off"></label>
+      <label class="field"><span class="label">Monthly budget <span class="opt">(0 = none)</span></span><input type="text" id="eBudget" inputmode="decimal" autocomplete="off"></label>
+      <label class="field"><span class="label">New PIN <span class="opt">(leave empty to keep the current one)</span></span><input type="text" id="ePin" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+      <label class="check"><input type="checkbox" id="eActive"> Can sign in and add expenses</label>
+      <p class="error" id="editError" role="alert" hidden></p>
+      <button type="button" class="link danger" id="eDelete">Delete this person</button>
+      <div class="dlg-actions">
+        <button type="button" class="btn ghost" id="eCancel">Cancel</button>
+        <button type="submit" class="btn" id="eSave">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="/common.js"></script>
   <script src="/admin.js"></script>
