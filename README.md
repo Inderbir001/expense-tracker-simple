@@ -2,52 +2,63 @@
 
 Mom adds an expense in three taps: **photo → price → Save**. You see totals, a daily chart and every photo on your dashboard.
 
-## Run it
+Two ways to run it. Same app, same screens.
 
-Needs [Node.js](https://nodejs.org) (v18 or newer). No `npm install` needed.
+## A) On Vercel (use it from anywhere, free)
 
-- **Windows:** double-click `start.bat`
-- **Anywhere:** `node server.js`
+Entries and photos are stored in **Vercel Blob** (a private store), so nothing is lost on redeploys.
 
-The console prints two things:
+1. **Import** this repo at <https://vercel.com/new>. Leave the framework preset as is.
+2. Under **Environment Variables**, add (before pressing Deploy):
 
-| What | Looks like | Who |
-|---|---|---|
-| Mom's link | `http://192.168.1.5:3000/?key=AbC123...` | Send to Mom once. She opens it and her phone remembers it. |
-| Dashboard | `http://192.168.1.5:3000/admin` + a 6-digit PIN | You |
+   | Name | Value |
+   |---|---|
+   | `ACCESS_KEY` | a long random secret (at least 10 characters). It becomes Mom's link. |
+   | `ADMIN_PIN` | your dashboard PIN (at least 6 characters; 10 digits is better). |
 
-Tip for Mom's phone: open the link, then browser menu → **Add to Home screen**. It becomes an app icon.
+3. Press **Deploy**.
+4. In the project, open **Storage → Create → Blob**, choose **Private**, and **connect it to the project** (this adds `BLOB_READ_WRITE_TOKEN` automatically).
+5. **Redeploy** (Deployments → ⋯ → Redeploy) so the app picks up the storage.
 
-## Where is everything saved?
+Then:
 
-In the `data/` folder next to `server.js`:
+- **Mom's link:** `https://<your-project>.vercel.app/?key=<ACCESS_KEY>`. Send it to her once. Her phone remembers it. On her phone use browser menu → **Add to Home screen**.
+- **Your dashboard:** `https://<your-project>.vercel.app/admin` and your `ADMIN_PIN`.
 
-- `expenses.json` — all entries
-- `photos/` — all photos
-- `config.json` — Mom's key and your PIN
+Until step 4 and 5 are done, the app shows "Storage is not connected yet".
 
-Copy that folder to back everything up. "Remove" in the app only hides an entry (it stays in `expenses.json`).
+## B) On your own computer
 
-## Letting Mom use it away from home
+Needs [Node.js](https://nodejs.org) (v18+).
 
-At home (same Wi-Fi) the printed `192.168.x.x` link works as-is. For anywhere-access the app has to run on a computer that is always on and reachable from the internet, i.e. a small hosted server (Render, Railway, Fly.io, a VPS). Whatever host you use, it needs a **persistent disk** mounted at the data folder, otherwise photos disappear on every restart.
+```
+npm install
+node server.js        # or double-click start.bat on Windows
+```
 
-Settings via environment variables (all optional):
+It prints Mom's link and your PIN. Data is saved in the `data/` folder (copy it to back up). On the same Wi-Fi, Mom can use the printed `192.168.x.x` address.
+
+## Settings (environment variables, all optional)
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PORT` | `3000` | Port to listen on |
-| `DATA_DIR` | `./data` | Where entries and photos are stored |
-| `ACCESS_KEY` | random | Secret in Mom's link |
-| `ADMIN_PIN` | random 6 digits | Your dashboard PIN |
+| `ACCESS_KEY` | random (local) / required (Vercel) | Secret in Mom's link |
+| `ADMIN_PIN` | random 6 digits (local) / required (Vercel) | Your dashboard PIN |
 | `CURRENCY` | `₹` | Symbol shown before amounts |
 | `LOCALE` | `en-IN` | Number formatting (`en-US`, `en-GB`, ...) |
+| `PORT` | `3000` | Local server port |
+| `DATA_DIR` | `./data` | Local data folder |
+
+"Remove" in the app only hides an entry; the record and photo stay in storage.
 
 ## Files
 
 ```
-server.js            the whole backend (no dependencies)
-public/index.html    Mom's page          public/mom.js
-public/admin.html    your dashboard      public/admin.js
-public/common.js     shared helpers      public/style.css
+api/[...slug].js     Vercel entry point (all API calls land here)
+lib/app.js           routes, login, validation (shared)
+lib/store-blob.js    storage on Vercel Blob
+lib/store-fs.js      storage in a local folder
+server.js            local server
+public/              the two pages: index.html (Mom) and admin.html (you)
+vercel.json          Vercel routing
 ```
