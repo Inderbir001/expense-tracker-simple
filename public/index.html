@@ -27,9 +27,13 @@
           <span class="label">Photo <span class="opt">(bill, item, anything)</span></span>
           <label class="photo-pick" id="photoPick">
             <span class="big" aria-hidden="true">&#128247;</span>
-            <span class="t">Tap to add a photo</span>
-            <input type="file" id="photo" accept="image/*" aria-label="Add a photo">
+            <span class="t">Tap to take a photo</span>
+            <input type="file" id="photo" accept="image/*" capture="environment" aria-label="Take a photo">
           </label>
+          <div class="gallery-row" id="galleryRow">
+            <label class="link" for="photoGallery">or choose from gallery</label>
+            <input type="file" id="photoGallery" accept="image/*" hidden>
+          </div>
           <div class="photo-actions" id="photoActions" hidden>
             <span class="muted small">Photo added</span>
             <button type="button" class="link danger" id="removePhoto">Remove photo</button>

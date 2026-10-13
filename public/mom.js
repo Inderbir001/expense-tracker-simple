@@ -63,11 +63,14 @@
     pick.querySelector('.big').hidden = has;
     pick.querySelector('.t').hidden = has;
     $('photoActions').hidden = !has;
+    $('galleryRow').hidden = has;
     if (has) pick.prepend(h('img', { src: photoData.photo, alt: 'Your photo' }));
     $('photo').value = '';
+    $('photoGallery').value = '';
   }
 
   $('photo').addEventListener('change', (e) => onPhoto(e.target.files[0]));
+  $('photoGallery').addEventListener('change', (e) => onPhoto(e.target.files[0]));
   $('removePhoto').addEventListener('click', () => { photoData = null; showPhoto(); });
 
   // ---------- date ----------
