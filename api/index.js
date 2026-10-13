@@ -1,5 +1,6 @@
 'use strict';
 // Vercel entry point: every /api/* request (plus /photos/* and Mom's /?key= link) lands here.
+// vercel.json rewrites each URL to /api/index?__p=<original path>, so we restore the real path first.
 // Data lives in Vercel Blob; the key and PIN come from environment variables.
 
 const { createApp } = require('../lib/app');
@@ -7,6 +8,14 @@ const { createBlobStore } = require('../lib/store-blob');
 const { configFromEnv } = require('../lib/config');
 
 let app = null;
+
+function restoreUrl(req) {
+  const u = new URL(req.url, 'http://localhost');
+  const p = u.searchParams.get('__p');
+  if (!p || !p.startsWith('/')) return;
+  u.searchParams.delete('__p');
+  req.url = p + u.search;
+}
 
 function problem(res, status, message) {
   res.statusCode = status;
@@ -33,6 +42,7 @@ function getApp() {
 }
 
 module.exports = async (req, res) => {
+  restoreUrl(req);
   const { app: ready, error } = getApp();
   if (error) return problem(res, 503, error);
   const handled = await ready.handle(req, res);

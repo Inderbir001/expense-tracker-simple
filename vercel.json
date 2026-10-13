@@ -6,13 +6,29 @@
   "redirects": [
     {
       "source": "/",
-      "has": [{ "type": "query", "key": "key", "value": "(?<key>.+)" }],
+      "has": [
+        {
+          "type": "query",
+          "key": "key",
+          "value": "(?<key>.+)"
+        }
+      ],
       "destination": "/api/enter?key=:key",
       "permanent": false
     }
   ],
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/photos/:file", "destination": "/api/photo/:file" }
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/photos/:file",
+      "destination": "/api/index?__p=/photos/:file"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index?__p=/api/:path*"
+    }
   ]
 }

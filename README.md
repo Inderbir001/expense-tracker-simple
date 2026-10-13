@@ -54,7 +54,7 @@ It prints Mom's link and your PIN. Data is saved in the `data/` folder (copy it 
 ## Files
 
 ```
-api/[...slug].js     Vercel entry point (all API calls land here)
+api/index.js          Vercel entry point (vercel.json rewrites every /api/* and /photos/* here)
 lib/app.js           routes, login, validation (shared)
 lib/store-blob.js    storage on Vercel Blob
 lib/store-fs.js      storage in a local folder
