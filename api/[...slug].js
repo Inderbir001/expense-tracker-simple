@@ -17,8 +17,9 @@ function problem(res, status, message) {
 
 function getApp() {
   if (app) return { app };
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return { error: 'Storage is not connected yet. In Vercel open Storage, create a Private Blob store, connect it to this project, then redeploy.' };
+  // Connecting a Blob store adds BLOB_STORE_ID (Vercel signs us in automatically) and optionally a read-write token.
+  if (!process.env.BLOB_STORE_ID && !process.env.BLOB_READ_WRITE_TOKEN) {
+    return { error: 'Storage is not connected yet. In Vercel open Storage, create a Private Blob store, connect it to this project (Production), then redeploy.' };
   }
   const { config, error } = configFromEnv();
   if (error) return { error };

@@ -17,7 +17,7 @@ Entries and photos are stored in **Vercel Blob** (a private store), so nothing i
    | `ADMIN_PIN` | your dashboard PIN (at least 4 characters). After 8 wrong tries sign-in locks for 15 minutes, so a short PIN is OK. |
 
 3. Press **Deploy**.
-4. In the project, open **Storage → Create → Blob**, choose **Private**, and **connect it to the project** (this adds `BLOB_READ_WRITE_TOKEN` automatically).
+4. In the project, open **Storage → Create → Blob**, choose **Private**, and **connect it to the project** (this adds `BLOB_STORE_ID`, and optionally `BLOB_READ_WRITE_TOKEN`; either one is enough).
 5. **Redeploy** (Deployments → ⋯ → Redeploy) so the app picks up the storage.
 
 Then:
