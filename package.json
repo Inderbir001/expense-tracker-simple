@@ -1,0 +1,8 @@
+{
+  "name": "mom-expense-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Super simple expense tracker: add a photo, a note and a price. See totals on a dashboard.",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Expenses</title>
+  <meta name="theme-color" content="#1f7a4d">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>My Expenses</h1>
+    </header>
+
+    <div id="locked" class="card" hidden>
+      <h2>Please open your link</h2>
+      <p class="muted">This page needs the special link that was sent to you. Open that link once and this page will work from then on.</p>
+    </div>
+
+    <main id="app">
+      <form id="form" class="card" novalidate>
+        <div class="field">
+          <span class="label">Photo <span class="opt">(bill, item, anything)</span></span>
+          <label class="photo-pick" id="photoPick">
+            <span class="big" aria-hidden="true">&#128247;</span>
+            <span class="t">Tap to add a photo</span>
+            <input type="file" id="photo" accept="image/*" aria-label="Add a photo">
+          </label>
+          <div class="photo-actions" id="photoActions" hidden>
+            <span class="muted small">Photo added</span>
+            <button type="button" class="link danger" id="removePhoto">Remove photo</button>
+          </div>
+        </div>
+
+        <label class="field" for="amount">
+          <span class="label">How much?</span>
+          <span class="money">
+            <span class="cur" id="cur">&#8377;</span>
+            <input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0">
+          </span>
+        </label>
+
+        <label class="field" for="note">
+          <span class="label">Note <span class="opt">(if you want)</span></span>
+          <textarea id="note" rows="2" maxlength="500" placeholder="e.g. Vegetables from the market"></textarea>
+        </label>
+
+        <div class="date-row">
+          <span>Date: <strong id="dateLabel">Today</strong></span>
+          <button type="button" class="link" id="changeDate">Change</button>
+          <input type="date" id="date" hidden aria-label="Date of expense">
+        </div>
+
+        <p class="error" id="error" role="alert" hidden></p>
+        <button type="submit" class="btn" id="save">Save expense</button>
+      </form>
+
+      <section class="card" id="summaryCard" hidden>
+        <div class="summary">
+          <div><div class="v" id="todayTotal"></div><div class="k">Today</div></div>
+          <div><div class="v" id="monthTotal"></div><div class="k">This month</div></div>
+        </div>
+      </section>
+
+      <section class="card" id="listCard" hidden>
+        <h2>My recent expenses</h2>
+        <div id="list"></div>
+        <button class="btn ghost" id="more" hidden>Show more</button>
+      </section>
+    </main>
+  </div>
+
+  <script src="/common.js"></script>
+  <script src="/mom.js"></script>
+</body>
+</html>
