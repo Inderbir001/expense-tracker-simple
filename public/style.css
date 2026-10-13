@@ -337,3 +337,9 @@ dialog.editdlg::backdrop { background: rgba(0, 0, 0, .55); }
 .check input { width: 22px; height: 22px; accent-color: var(--accent); }
 .dlg-actions { display: flex; gap: 10px; }
 .dlg-actions .btn { flex: 1; }
+
+/* ---- admin navigation ---- */
+.card.slim { padding: 10px 14px; }
+.card.slim .monthbar { margin-bottom: 0; }
+#dash .wrap { padding-top: 14px; }
+.btn.small { text-decoration: none; }

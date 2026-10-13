@@ -34,6 +34,32 @@
     toast('Address copied');
   });
 
+  // ---------- menu + pages (hamburger) ----------
+
+  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', members: 'pageMembers', share: 'pageShare' };
+  const TITLES = { overview: 'Overview', expenses: 'All expenses', members: 'Family members', share: 'Share & export' };
+  const FILTERED = new Set(['overview', 'expenses']); // pages that use the person + month filters
+
+  function setDrawer(open) {
+    $('drawer').hidden = !open;
+    $('menuBtn').setAttribute('aria-expanded', String(open));
+    document.body.classList.toggle('no-scroll', open);
+  }
+  $('menuBtn').addEventListener('click', () => setDrawer($('drawer').hidden));
+  $('drawerBackdrop').addEventListener('click', () => setDrawer(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
+
+  function route() {
+    const page = PAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'overview';
+    Object.entries(PAGES).forEach(([key, id]) => { $(id).hidden = key !== page; });
+    $('filters').hidden = !FILTERED.has(page);
+    $('appTitle').textContent = TITLES[page];
+    document.querySelectorAll('.drawer a').forEach((a) => a.classList.toggle('active', a.dataset.page === page));
+    setDrawer(false);
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
   // ---------- who chips ----------
 
   function renderChips() {
@@ -321,6 +347,8 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
   // ---------- load + navigation ----------
 
   function renderAll() {
+    const n = active().length;
+    $('drawerInfo').textContent = n ? `${n} family member${n === 1 ? '' : 's'}` : 'No family members yet';
     renderChips();
     renderStats();
     renderBudgets();
@@ -354,6 +382,7 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
     try {
       await load();
       $('dash').hidden = false;
+      route();
     } catch (err) {
       toast(err.message, true);
     }
