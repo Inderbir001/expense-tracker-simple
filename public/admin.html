@@ -31,6 +31,7 @@
         </div>
         <a href="#overview" data-page="overview"><span class="ico">&#128202;</span> Overview</a>
         <a href="#expenses" data-page="expenses"><span class="ico">&#129534;</span> All expenses</a>
+        <a href="#ration" data-page="ration"><span class="ico">&#128722;</span> Ration list <span class="badge" id="rationBadge" hidden></span></a>
         <a href="#members" data-page="members"><span class="ico">&#128106;</span> Family members</a>
         <a href="#share" data-page="share"><span class="ico">&#128279;</span> Share &amp; export</a>
         <button type="button" class="signout" id="logout"><span class="ico">&#128682;</span> Sign out</button>
@@ -59,6 +60,8 @@
           <div class="stat"><div class="k">This month</div><div class="v" id="sMonth"></div></div>
           <div class="stat primary"><div class="k">Total so far</div><div class="v" id="sAll"></div></div>
         </div>
+
+        <a href="#ration" class="card mini-ration" id="miniRation" hidden><span class="ico">&#128722;</span><span><strong id="miniRationTitle">Ration list</strong><br><span class="muted small">Tap to see what to order</span></span></a>
 
         <section class="card">
           <h2>Budgets</h2>
@@ -91,6 +94,9 @@
           <div id="months"></div>
         </section>
       </main>
+
+      <!-- ---- ration list ---- -->
+      <main id="pageRation" hidden></main>
 
       <!-- ---- family members ---- -->
       <main id="pageMembers" hidden>
@@ -150,6 +156,7 @@
   </dialog>
 
   <script src="/common.js"></script>
+  <script src="/ration.js"></script>
   <script src="/admin.js"></script>
 </body>
 </html>

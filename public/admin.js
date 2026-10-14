@@ -36,8 +36,16 @@
 
   // ---------- menu + pages (hamburger) ----------
 
-  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', members: 'pageMembers', share: 'pageShare' };
-  const TITLES = { overview: 'Overview', expenses: 'All expenses', members: 'Family members', share: 'Share & export' };
+  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', ration: 'pageRation', members: 'pageMembers', share: 'pageShare' };
+  const TITLES = { overview: 'Overview', expenses: 'All expenses', ration: 'Ration list', members: 'Family members', share: 'Share & export' };
+  let ration = null;
+
+  function setRationCount(n) {
+    $('rationBadge').hidden = n === 0;
+    $('rationBadge').textContent = String(n);
+    $('miniRation').hidden = n === 0;
+    $('miniRationTitle').textContent = `${n} item${n === 1 ? '' : 's'} on the ration list`;
+  }
   const FILTERED = new Set(['overview', 'expenses']); // pages that use the person + month filters
 
   function setDrawer(open) {
@@ -57,6 +65,7 @@
     document.querySelectorAll('.drawer a').forEach((a) => a.classList.toggle('active', a.dataset.page === page));
     setDrawer(false);
     window.scrollTo(0, 0);
+    if (page === 'ration' && ration) ration.refresh();
   }
   window.addEventListener('hashchange', route);
 
@@ -382,6 +391,7 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
     try {
       await load();
       $('dash').hidden = false;
+      ration = Ration.mount($('pageRation'), { isAdmin: true, onCount: setRationCount });
       route();
     } catch (err) {
       toast(err.message, true);

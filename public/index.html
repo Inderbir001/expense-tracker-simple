@@ -58,6 +58,7 @@
         <a href="#add" data-page="add"><span class="ico">&#10133;</span> Add expense</a>
         <a href="#list" data-page="list"><span class="ico">&#129534;</span> My expenses</a>
         <a href="#budget" data-page="budget"><span class="ico">&#128176;</span> My budget</a>
+        <a href="#ration" data-page="ration"><span class="ico">&#128722;</span> Ration list <span class="badge" id="rationBadge" hidden></span></a>
         <button type="button" class="signout" id="signOut"><span class="ico">&#128682;</span> Sign out</button>
       </nav>
     </div>
@@ -67,6 +68,7 @@
       <!-- ---- add ---- -->
       <main id="pageAdd">
         <a href="#budget" class="card mini-budget" id="miniBudget" hidden></a>
+        <a href="#ration" class="card mini-ration" id="miniRation"><span class="ico">&#128722;</span><span><strong>Ration list</strong><br><span class="muted small" id="miniRationText">Add what we need from the shop</span></span></a>
 
         <form id="form" class="card" novalidate>
           <div class="field">
@@ -135,6 +137,9 @@
         </section>
       </main>
 
+      <!-- ---- ration list ---- -->
+      <main id="pageRation" hidden></main>
+
       <!-- ---- my budget ---- -->
       <main id="pageBudget" hidden>
         <section class="card budget-hero" id="budgetHero"></section>
@@ -161,6 +166,7 @@
   </div>
 
   <script src="/common.js"></script>
+  <script src="/ration.js"></script>
   <script src="/member.js"></script>
 </body>
 </html>

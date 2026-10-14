@@ -343,3 +343,71 @@ dialog.editdlg::backdrop { background: rgba(0, 0, 0, .55); }
 .card.slim .monthbar { margin-bottom: 0; }
 #dash .wrap { padding-top: 14px; }
 .btn.small { text-decoration: none; }
+
+/* ---- ration list ---- */
+.badge {
+  display: inline-block; min-width: 1.5em; padding: 0 .5em; margin-left: .4em; border-radius: 999px; text-align: center;
+  background: var(--accent); color: var(--accent-ink); font-size: .8rem; font-weight: 800; line-height: 1.6;
+}
+.drawer-panel a .badge { margin-left: auto; }
+.mini-ration { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); padding: 14px 16px; }
+.mini-ration .ico { font-size: 1.6rem; }
+
+.seg { display: flex; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 5px; margin-bottom: 14px; }
+.seg button {
+  flex: 1; font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 14px 8px; cursor: pointer;
+  background: transparent; color: var(--muted); min-height: 52px;
+}
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+.seg button.on .badge { background: var(--accent-ink); color: var(--accent); }
+
+.rhint { margin: 0 0 10px; }
+.rsearch {
+  width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink); background: var(--card); border: 2px solid var(--line);
+  border-radius: 14px; padding: 14px; min-height: 58px; margin-bottom: 12px;
+}
+.rsearch:focus { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.rchips { padding-bottom: 10px; }
+
+.rgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .rgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rtile {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 14px; min-height: 76px;
+}
+.rtile:active { transform: scale(.97); }
+.rtile .rname { font-weight: 700; overflow-wrap: anywhere; }
+.rtile .rsub { color: var(--muted); font-size: .85rem; }
+.rtile.has { border-color: var(--accent); background: var(--accent-soft); }
+.rtile.has .rsub { color: var(--accent); font-weight: 700; }
+.rtile.custom { grid-column: 1 / -1; border-style: dashed; border-color: var(--accent); }
+
+.rgroup h2 { margin-bottom: 4px; }
+.rrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.rrow.solo .stepper { grid-column: 1 / -1; }
+.rrow > .btn.small { padding: 0 12px; min-height: 44px; }
+.rrow:first-of-type { border-top: 0; }
+.rmain { min-width: 0; }
+.rtitle { font-weight: 700; overflow-wrap: anywhere; }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button {
+  width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--ink);
+  font-size: 1.4rem; font-weight: 700; cursor: pointer; line-height: 1;
+}
+.stepper .q { min-width: 2.4em; text-align: center; font-weight: 800; font-size: 1.1rem; }
+.stepper select.unit {
+  font: inherit; font-weight: 600; color: var(--ink); background: var(--bg); border: 2px solid var(--line);
+  border-radius: 12px; height: 44px; padding: 0 6px;
+}
+.ractions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.ractionsbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.ractionsbar .btn { flex: 1 1 160px; margin-top: 0; }
+.rdone summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+.rrow.done .rtitle { font-weight: 600; color: var(--muted); }
+
+/* compact stepper so name, stepper and the Ordered button fit on a 360px phone */
+.stepper { gap: 4px; min-width: 0; }
+.stepper button { width: 40px; height: 40px; font-size: 1.3rem; }
+.stepper .q { min-width: 1.9em; font-size: 1.05rem; }
+.stepper select.unit { width: 68px; height: 40px; padding: 0 4px; font-size: .95rem; }
+.rrow > .btn.small { padding: 0 10px; font-size: .9rem; }

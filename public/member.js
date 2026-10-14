@@ -89,8 +89,15 @@
   // Menu + pages
   // =====================================================================
 
-  const PAGES = { add: 'pageAdd', list: 'pageList', budget: 'pageBudget' };
-  const TITLES = { add: 'Add expense', list: 'My expenses', budget: 'My budget' };
+  const PAGES = { add: 'pageAdd', list: 'pageList', budget: 'pageBudget', ration: 'pageRation' };
+  const TITLES = { add: 'Add expense', list: 'My expenses', budget: 'My budget', ration: 'Ration list' };
+  let ration = null;
+
+  function setRationCount(n) {
+    $('rationBadge').hidden = n === 0;
+    $('rationBadge').textContent = String(n);
+    $('miniRationText').textContent = n ? `${n} item${n === 1 ? '' : 's'} to order. Tap to add more.` : 'Add what we need from the shop';
+  }
 
   function setDrawer(open) {
     $('drawer').hidden = !open;
@@ -110,6 +117,7 @@
     window.scrollTo(0, 0);
     if (page === 'list') renderList();
     if (page === 'budget') renderBudget();
+    if (page === 'ration' && ration) ration.refresh();
   }
   window.addEventListener('hashchange', route);
 
@@ -529,6 +537,7 @@
     $('drawerAvatar').textContent = me.name.trim().charAt(0).toUpperCase();
     $('drawerBudget').textContent = me.budget > 0 ? `Budget ${money(me.budget)} / month` : 'No budget set';
     show('viewApp');
+    ration = Ration.mount($('pageRation'), { isAdmin: false, myId: me.id, onCount: setRationCount });
     restoreDraft();
     await load();
     route();
