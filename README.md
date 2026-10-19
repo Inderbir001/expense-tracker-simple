@@ -7,6 +7,8 @@ Everyone in the family adds expenses in three taps: **photo, price, Save**. Each
 - **One website address for everyone.** People tap their name and enter their own PIN. Logins last a year and renew while in use.
 - **Admin** (you) signs in with "I'm the admin" and the admin PIN. From the dashboard you can add family members, set each person's PIN and monthly budget, switch people off, and see every expense (filter by person, month, day), budgets used and left, and download everything as CSV.
 - **Family members** see only their own things, through the menu (hamburger): **Add expense**, **My expenses** and **My budget** (budget, spent, left, safe amount per day, pace, last 6 months).
+- **Messages**: each person has a private thread with the admin. They can send a photo (live in-app camera, or from the gallery) and a note, and tag it as a **medicine request**. The admin gets an inbox, replies, and marks medicine requests **Done** (the person is told).
+- **Notifications**: a bell inside the app, plus real phone notifications when the person turns them on (new message, reply, medicine request done, ration items added/ordered, budget 80% / over). Phone notifications work on Android Chrome; on iPhone the site must first be added to the Home Screen. The push keys are created automatically on first use and kept in storage, so there is nothing extra to configure.
 - **Ration list** (one shared list for the whole family): anyone taps items from a catalog of common Indian groceries (searchable in English and Hindi, e.g. "gehun" finds Atta) or types their own, and adjusts how much. The admin sees the list, marks items as ordered, and can share it on WhatsApp or copy it.
 
 ## Run it on Vercel (use it from anywhere, free)
@@ -65,6 +67,10 @@ lib/store-fs.js      storage in a local folder
 server.js            local server
 public/index.html    sign in + family pages (member.js)
 public/ration.js     the ration list page and grocery catalog (shared by both apps)
+public/messages.js   messages with photos (shared)
+public/notify.js     notification bell + phone push (shared)
+public/camera.js     in-app camera and photo shrinking (shared)
+public/sw.js         service worker that shows phone notifications
 public/admin.html    admin dashboard (admin.js)
 vercel.json          Vercel routing
 ```

@@ -81,6 +81,7 @@
   });
 
   $('signOut').addEventListener('click', async () => {
+    await Notify.goodbye(); // so the next person on this phone gets their own notifications
     await api('/api/logout', { method: 'POST' }).catch(() => {});
     location.href = '/';
   });
@@ -89,9 +90,20 @@
   // Menu + pages
   // =====================================================================
 
-  const PAGES = { add: 'pageAdd', list: 'pageList', budget: 'pageBudget', ration: 'pageRation' };
-  const TITLES = { add: 'Add expense', list: 'My expenses', budget: 'My budget', ration: 'Ration list' };
+  const PAGES = { add: 'pageAdd', list: 'pageList', budget: 'pageBudget', ration: 'pageRation', messages: 'pageMessages' };
+  const TITLES = { add: 'Add expense', list: 'My expenses', budget: 'My budget', ration: 'Ration list', messages: 'Messages' };
   let ration = null;
+  let messages = null;
+
+  // numbers from the notification check: badges on the menu and on the home screen
+  function onNews(data) {
+    $('msgBadge').hidden = data.messages === 0;
+    $('msgBadge').textContent = String(data.messages);
+    $('miniMessagesText').textContent = data.messages
+      ? `${data.messages} new message${data.messages === 1 ? '' : 's'} from the admin`
+      : 'Send a medicine photo or a note to the admin';
+    if (!$('pageMessages').hidden && messages && data.messages) messages.refresh();
+  }
 
   function setRationCount(n) {
     $('rationBadge').hidden = n === 0;
@@ -118,6 +130,7 @@
     if (page === 'list') renderList();
     if (page === 'budget') renderBudget();
     if (page === 'ration' && ration) ration.refresh();
+    if (page === 'messages' && messages) messages.refresh();
   }
   window.addEventListener('hashchange', route);
 
@@ -288,62 +301,8 @@
   }
 
   // =====================================================================
-  // Photo (in-app camera; full-size photos crash low-memory phones, so keep things small)
+  // Photo (the camera and photo shrinking live in camera.js)
   // =====================================================================
-
-  const MAX_SIDE = 1600;
-
-  function toJpeg(src, maxSide, quality) {
-    const w = src.videoWidth || src.width || src.naturalWidth;
-    const hgt = src.videoHeight || src.height || src.naturalHeight;
-    const scale = Math.min(1, maxSide / Math.max(w, hgt));
-    const c = document.createElement('canvas');
-    c.width = Math.max(1, Math.round(w * scale));
-    c.height = Math.max(1, Math.round(hgt * scale));
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(src, 0, 0, c.width, c.height);
-    return { url: c.toDataURL('image/jpeg', quality), canvas: c };
-  }
-
-  function makePhotoData(src) {
-    const big = toJpeg(src, MAX_SIDE, 0.82);
-    const small = toJpeg(big.canvas, 240, 0.7);
-    big.canvas.width = big.canvas.height = 0; // give the memory back
-    return { photo: big.url, thumb: small.url };
-  }
-
-  async function loadBitmap(file) {
-    if (window.createImageBitmap) {
-      try {
-        const opts = { imageOrientation: 'from-image' };
-        if (file.size > 700 * 1024) Object.assign(opts, { resizeWidth: MAX_SIDE, resizeQuality: 'medium' });
-        return await createImageBitmap(file, opts);
-      } catch { /* fall back */ }
-    }
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
-    });
-  }
-
-  async function onPhoto(file) {
-    if (!file) return;
-    try {
-      const bmp = await loadBitmap(file);
-      photoData = makePhotoData(bmp);
-      if (bmp.close) bmp.close();
-      showPhoto();
-      saveDraft();
-    } catch {
-      photoData = null;
-      showPhoto();
-      showError('Sorry, that photo could not be opened. Please try another one.');
-    }
-  }
 
   function showPhoto() {
     const pick = $('photoPick');
@@ -359,50 +318,34 @@
     $('photoGallery').value = '';
   }
 
-  let stream = null;
-
-  function closeCamera() {
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    stream = null;
-    $('camVideo').srcObject = null;
-    $('cam').hidden = true;
-  }
-
   async function openCamera() {
     if (photoData) return;
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      toast('Please use "Use phone camera app" or "Choose from gallery" below the photo box.');
-      return;
-    }
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      });
-    } catch {
-      toast('The camera is blocked. Allow it in the browser, or use "Use phone camera app" below.', true);
-      return;
+      const data = await Camera.take();
+      if (!data) return; // cancelled
+      photoData = data;
+      showPhoto();
+      saveDraft();
+    } catch (err) {
+      if (err.code === 'blocked') toast('The camera is blocked. Allow it in the browser, or use "Use phone camera app" below.', true);
+      else toast('Please use "Use phone camera app" or "Choose from gallery" below the photo box.');
     }
-    const v = $('camVideo');
-    v.srcObject = stream;
-    $('cam').hidden = false;
-    try { await v.play(); } catch { /* autoplay is already on */ }
+  }
+
+  async function onPhoto(file) {
+    if (!file) return;
+    try {
+      photoData = await Camera.fromFile(file);
+      showPhoto();
+      saveDraft();
+    } catch {
+      photoData = null;
+      showPhoto();
+      showError('Sorry, that photo could not be opened. Please try another one.');
+    }
   }
 
   $('photoPick').addEventListener('click', openCamera);
-  $('camCancel').addEventListener('click', closeCamera);
-  $('camShutter').addEventListener('click', () => {
-    const v = $('camVideo');
-    if (!v.videoWidth) return; // camera not ready yet
-    photoData = makePhotoData(v);
-    closeCamera();
-    showPhoto();
-    saveDraft();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('cam').hidden) closeCamera(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) closeCamera(); });
-  window.addEventListener('pagehide', closeCamera);
-
   $('photoCapture').addEventListener('change', (e) => onPhoto(e.target.files[0]));
   $('photoGallery').addEventListener('change', (e) => onPhoto(e.target.files[0]));
   $('removePhoto').addEventListener('click', () => { photoData = null; showPhoto(); saveDraft(); });
@@ -538,6 +481,8 @@
     $('drawerBudget').textContent = me.budget > 0 ? `Budget ${money(me.budget)} / month` : 'No budget set';
     show('viewApp');
     ration = Ration.mount($('pageRation'), { isAdmin: false, myId: me.id, onCount: setRationCount });
+    messages = Messages.mount($('pageMessages'), { isAdmin: false, onChange: () => Notify.refresh() });
+    Notify.mount({ slot: $('bellSlot'), onData: onNews });
     restoreDraft();
     await load();
     route();

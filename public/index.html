@@ -42,6 +42,7 @@
         <span></span><span></span><span></span>
       </button>
       <h1 id="appTitle">Add expense</h1>
+      <span id="bellSlot"></span>
       <span class="who-chip" id="whoChip"></span>
     </header>
 
@@ -58,6 +59,7 @@
         <a href="#add" data-page="add"><span class="ico">&#10133;</span> Add expense</a>
         <a href="#list" data-page="list"><span class="ico">&#129534;</span> My expenses</a>
         <a href="#budget" data-page="budget"><span class="ico">&#128176;</span> My budget</a>
+        <a href="#messages" data-page="messages"><span class="ico">&#128172;</span> Messages <span class="badge" id="msgBadge" hidden></span></a>
         <a href="#ration" data-page="ration"><span class="ico">&#128722;</span> Ration list <span class="badge" id="rationBadge" hidden></span></a>
         <button type="button" class="signout" id="signOut"><span class="ico">&#128682;</span> Sign out</button>
       </nav>
@@ -68,6 +70,7 @@
       <!-- ---- add ---- -->
       <main id="pageAdd">
         <a href="#budget" class="card mini-budget" id="miniBudget" hidden></a>
+        <a href="#messages" class="card mini-ration" id="miniMessages"><span class="ico">&#128172;</span><span><strong>Messages</strong><br><span class="muted small" id="miniMessagesText">Send a medicine photo or a note to the admin</span></span></a>
         <a href="#ration" class="card mini-ration" id="miniRation"><span class="ico">&#128722;</span><span><strong>Ration list</strong><br><span class="muted small" id="miniRationText">Add what we need from the shop</span></span></a>
 
         <form id="form" class="card" novalidate>
@@ -140,6 +143,9 @@
       <!-- ---- ration list ---- -->
       <main id="pageRation" hidden></main>
 
+      <!-- ---- messages ---- -->
+      <main id="pageMessages" hidden></main>
+
       <!-- ---- my budget ---- -->
       <main id="pageBudget" hidden>
         <section class="card budget-hero" id="budgetHero"></section>
@@ -155,17 +161,10 @@
     </div>
   </div>
 
-  <!-- ===== in-app camera ===== -->
-  <div id="cam" class="cam" hidden role="dialog" aria-label="Camera">
-    <video id="camVideo" autoplay playsinline muted></video>
-    <div class="cam-bar">
-      <button type="button" class="cam-cancel" id="camCancel">Cancel</button>
-      <button type="button" class="cam-shutter" id="camShutter" aria-label="Take photo"></button>
-      <span class="cam-spacer"></span>
-    </div>
-  </div>
-
   <script src="/common.js"></script>
+  <script src="/camera.js"></script>
+  <script src="/notify.js"></script>
+  <script src="/messages.js"></script>
   <script src="/ration.js"></script>
   <script src="/member.js"></script>
 </body>

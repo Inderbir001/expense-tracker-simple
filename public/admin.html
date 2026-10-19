@@ -16,6 +16,7 @@
         <span></span><span></span><span></span>
       </button>
       <h1 id="appTitle">Overview</h1>
+      <span id="bellSlot"></span>
       <span class="who-chip">Admin</span>
     </header>
 
@@ -31,6 +32,7 @@
         </div>
         <a href="#overview" data-page="overview"><span class="ico">&#128202;</span> Overview</a>
         <a href="#expenses" data-page="expenses"><span class="ico">&#129534;</span> All expenses</a>
+        <a href="#messages" data-page="messages"><span class="ico">&#128172;</span> Messages <span class="badge" id="msgBadge" hidden></span></a>
         <a href="#ration" data-page="ration"><span class="ico">&#128722;</span> Ration list <span class="badge" id="rationBadge" hidden></span></a>
         <a href="#members" data-page="members"><span class="ico">&#128106;</span> Family members</a>
         <a href="#share" data-page="share"><span class="ico">&#128279;</span> Share &amp; export</a>
@@ -61,6 +63,7 @@
           <div class="stat primary"><div class="k">Total so far</div><div class="v" id="sAll"></div></div>
         </div>
 
+        <a href="#messages" class="card mini-ration" id="miniMessages" hidden><span class="ico">&#128172;</span><span><strong id="miniMessagesTitle">Messages</strong><br><span class="muted small">Tap to read and reply</span></span></a>
         <a href="#ration" class="card mini-ration" id="miniRation" hidden><span class="ico">&#128722;</span><span><strong id="miniRationTitle">Ration list</strong><br><span class="muted small">Tap to see what to order</span></span></a>
 
         <section class="card">
@@ -97,6 +100,9 @@
 
       <!-- ---- ration list ---- -->
       <main id="pageRation" hidden></main>
+
+      <!-- ---- messages ---- -->
+      <main id="pageMessages" hidden></main>
 
       <!-- ---- family members ---- -->
       <main id="pageMembers" hidden>
@@ -156,6 +162,9 @@
   </dialog>
 
   <script src="/common.js"></script>
+  <script src="/camera.js"></script>
+  <script src="/notify.js"></script>
+  <script src="/messages.js"></script>
   <script src="/ration.js"></script>
   <script src="/admin.js"></script>
 </body>

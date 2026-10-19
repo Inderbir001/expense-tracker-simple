@@ -19,6 +19,7 @@
   // ---------- sign out ----------
 
   $('logout').addEventListener('click', async () => {
+    await Notify.goodbye();
     await api('/api/logout', { method: 'POST' }).catch(() => {});
     location.href = '/';
   });
@@ -36,9 +37,20 @@
 
   // ---------- menu + pages (hamburger) ----------
 
-  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', ration: 'pageRation', members: 'pageMembers', share: 'pageShare' };
-  const TITLES = { overview: 'Overview', expenses: 'All expenses', ration: 'Ration list', members: 'Family members', share: 'Share & export' };
+  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', messages: 'pageMessages', ration: 'pageRation', members: 'pageMembers', share: 'pageShare' };
+  const TITLES = { overview: 'Overview', expenses: 'All expenses', messages: 'Messages', ration: 'Ration list', members: 'Family members', share: 'Share & export' };
   let ration = null;
+  let messages = null;
+
+  // numbers from the notification check: menu badge and the card on the overview
+  function onNews(data) {
+    $('msgBadge').hidden = data.messages === 0;
+    $('msgBadge').textContent = String(data.messages);
+    const med = data.medicine ? ` \u00B7 \u{1F48A} ${data.medicine} medicine request${data.medicine === 1 ? '' : 's'}` : '';
+    $('miniMessages').hidden = data.messages === 0 && data.medicine === 0;
+    $('miniMessagesTitle').textContent = `${data.messages} unread message${data.messages === 1 ? '' : 's'}${med}`;
+    if (!$('pageMessages').hidden && messages) messages.refresh();
+  }
 
   function setRationCount(n) {
     $('rationBadge').hidden = n === 0;
@@ -58,7 +70,8 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
 
   function route() {
-    const page = PAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'overview';
+    const [hashPage, hashArg] = location.hash.slice(1).split('/');
+    const page = PAGES[hashPage] ? hashPage : 'overview';
     Object.entries(PAGES).forEach(([key, id]) => { $(id).hidden = key !== page; });
     $('filters').hidden = !FILTERED.has(page);
     $('appTitle').textContent = TITLES[page];
@@ -66,6 +79,7 @@
     setDrawer(false);
     window.scrollTo(0, 0);
     if (page === 'ration' && ration) ration.refresh();
+    if (page === 'messages' && messages) { if (hashArg) messages.open(hashArg); else messages.home(); messages.refresh(); }
   }
   window.addEventListener('hashchange', route);
 
@@ -392,6 +406,8 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
       await load();
       $('dash').hidden = false;
       ration = Ration.mount($('pageRation'), { isAdmin: true, onCount: setRationCount });
+      messages = Messages.mount($('pageMessages'), { isAdmin: true, onChange: () => Notify.refresh() });
+      Notify.mount({ slot: $('bellSlot'), onData: onNews });
       route();
     } catch (err) {
       toast(err.message, true);
