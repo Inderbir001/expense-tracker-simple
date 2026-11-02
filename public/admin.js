@@ -37,8 +37,8 @@
 
   // ---------- menu + pages (hamburger) ----------
 
-  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', messages: 'pageMessages', ration: 'pageRation', members: 'pageMembers', share: 'pageShare' };
-  const TITLES = { overview: 'Overview', expenses: 'All expenses', messages: 'Messages', ration: 'Ration list', members: 'Family members', share: 'Share & export' };
+  const PAGES = { overview: 'pageOverview', expenses: 'pageExpenses', approvals: 'pageApprovals', addexpense: 'pageAddexpense', messages: 'pageMessages', ration: 'pageRation', members: 'pageMembers', share: 'pageShare' };
+  const TITLES = { overview: 'Overview', expenses: 'All expenses', approvals: 'Approvals', addexpense: 'Add expense', messages: 'Messages', ration: 'Ration list', members: 'Family members', share: 'Share & export' };
   let ration = null;
   let messages = null;
 
@@ -50,7 +50,14 @@
     $('miniMessages').hidden = data.messages === 0 && data.medicine === 0;
     $('miniMessagesTitle').textContent = `${data.messages} unread message${data.messages === 1 ? '' : 's'}${med}`;
     if (!$('pageMessages').hidden && messages) messages.refresh();
+    const waiting = data.approvals || 0;
+    $('apBadge').hidden = waiting === 0;
+    $('apBadge').textContent = String(waiting);
+    $('miniApprovals').hidden = waiting === 0;
+    $('miniApprovalsTitle').textContent = `${waiting} expense${waiting === 1 ? '' : 's'} waiting for approval`;
+    if (waiting !== lastWaiting) { lastWaiting = waiting; if (!$('pageApprovals').hidden) load(); }
   }
+  let lastWaiting = null;
 
   function setRationCount(n) {
     $('rationBadge').hidden = n === 0;
@@ -160,7 +167,8 @@
   }
 
   function renderMonth() {
-    const inMonth = mine().filter((e) => e.date.startsWith(viewMonth));
+    const inMonthAll = mine().filter((e) => e.date.startsWith(viewMonth));
+    const inMonth = inMonthAll.filter((e) => e.status !== 'rejected'); // what counts
     const [y, mo] = viewMonth.split('-').map(Number);
     const daysInMonth = new Date(y, mo, 0).getDate();
     const isCurrent = viewMonth === todayStr().slice(0, 7);
@@ -219,16 +227,16 @@
     $('listTitle').textContent = `${who2} — ${App.monthLabel(viewMonth)}`;
     const box = $('entries');
     box.replaceChildren();
-    if (!inMonth.length) { box.append(h('div', { class: 'empty-state' }, 'No expenses this month.')); return; }
+    if (!inMonthAll.length) { box.append(h('div', { class: 'empty-state' }, 'No expenses this month.')); return; }
     const byDate = new Map();
-    for (const e of inMonth) {
+    for (const e of inMonthAll) {
       if (!byDate.has(e.date)) byDate.set(e.date, []);
       byDate.get(e.date).push(e);
     }
     for (const [date, list] of byDate) {
       box.append(h('div', { class: 'daygroup' },
         h('div', { class: 'dayhead' }, h('span', null, App.prettyDate(date)), h('span', null, money(sum(list)))),
-        list.map((e) => App.entryRow(e, { showDate: false, showMember: who === 'all', onDelete: remove })),
+        list.map((e) => App.entryRow(e, { showDate: false, showMember: who === 'all', onDelete: remove, onEdit: edit })),
       ));
     }
   }
@@ -236,6 +244,7 @@
   function renderMonths() {
     const totals = new Map();
     for (const e of mine()) {
+      if (e.status === 'rejected') continue;
       const m = e.date.slice(0, 7);
       totals.set(m, (totals.get(m) || 0) + e.amount);
     }
@@ -355,6 +364,8 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
 
   // ---------- removing an expense ----------
 
+  const edit = (e) => ExpenseEditor.open(e, { isAdmin: true, onSaved: () => load() });
+
   async function remove(e) {
     const what = [e.memberName, e.note, money(e.amount)].filter(Boolean).join(' — ');
     if (!confirm(`Remove this expense?\n\n${what}`)) return;
@@ -365,6 +376,153 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
     } catch (err) {
       toast(err.message, true);
     }
+  }
+
+  // ---------- approvals: approve or reject what the family added ----------
+
+  let apTab = 'waiting';
+
+  function budgetLine(e) {
+    const m = members.find((x) => x.id === e.memberId);
+    if (!m || !(m.budget > 0)) return null;
+    const s = App.budgetStats(expenses.filter((x) => x.memberId === m.id), m.budget, e.date.slice(0, 7));
+    return h('div', { class: 'muted small' }, `${m.name}: ${money(s.spent)} of ${money(s.budget)} used in ${App.monthLabel(s.month)}${s.over ? ' (over budget)' : ''}`);
+  }
+
+  async function review(e, decision, note) {
+    try {
+      await api('/api/expenses/' + e.id + '/review', { method: 'POST', body: JSON.stringify({ decision, note }) });
+      toast(decision === 'approved' ? '✓ Approved' : '✗ Rejected, they will be told');
+      await load();
+      Notify.refresh();
+    } catch (err) { toast(err.message, true); }
+  }
+
+  // a reject button that asks for an optional reason right there (no pop-up)
+  function rejectControl(e, label) {
+    const reason = h('input', { type: 'text', maxlength: 200, placeholder: 'Reason (optional), e.g. not needed', 'aria-label': 'Reason' });
+    const box = h('div', { class: 'rejectbox', hidden: true }, reason,
+      h('div', { class: 'abtns' },
+        h('button', { class: 'btn danger', onclick: () => review(e, 'rejected', reason.value) }, 'Confirm reject'),
+        h('button', { class: 'btn ghost', onclick: () => { box.hidden = true; } }, 'Cancel')));
+    const open = h('button', { class: 'btn ghost danger', onclick: () => { box.hidden = !box.hidden; if (!box.hidden) reason.focus(); } }, label);
+    return { open, box };
+  }
+
+  function approvalCard(e) {
+    const rej = rejectControl(e, '✗ Reject');
+    return h('section', { class: 'card approval' },
+      h('div', { class: 'ahead' }, h('strong', null, e.memberName), h('span', { class: 'amt' }, money(e.amount))),
+      h('div', { class: 'muted small' }, App.prettyDate(e.date) + (e.edited ? ' · edited' : '')),
+      e.note ? h('div', { class: 'anote' }, e.note) : null,
+      e.thumb ? h('button', { class: 'bphoto', style: "background-image:url('" + e.thumb + "')", 'aria-label': 'Open photo',
+        onclick: () => App.viewPhoto(e.photo || e.thumb, [e.note, money(e.amount)].filter(Boolean).join(' — ')) }) : null,
+      budgetLine(e),
+      h('div', { class: 'abtns' }, h('button', { class: 'btn', onclick: () => review(e, 'approved') }, '✓ Approve'), rej.open),
+      rej.box);
+  }
+
+  function renderApprovals() {
+    const root = $('pageApprovals');
+    const waiting = expenses.filter((e) => e.status === 'pending');
+    const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+    const reviewed = expenses.filter((e) => e.status !== 'pending' && e.reviewedAt && Date.parse(e.reviewedAt) > cutoff)
+      .sort((a, b) => (a.reviewedAt < b.reviewedAt ? 1 : -1));
+
+    const tab = (key, label, count) => h('button', { class: apTab === key ? 'on' : '', role: 'tab', onclick: () => { apTab = key; renderApprovals(); } }, label, count ? h('span', { class: 'badge' }, String(count)) : null);
+    const view = h('div');
+
+    if (apTab === 'waiting') {
+      if (!waiting.length) {
+        view.append(h('div', { class: 'card empty-state' }, 'Nothing is waiting for approval. \u{1F389}'));
+      } else {
+        view.append(h('div', { class: 'card ractionsbar' },
+          h('button', { class: 'btn', onclick: async () => {
+            if (!confirm('Approve all ' + waiting.length + ' expenses?')) return;
+            try { await api('/api/expenses/approve-all', { method: 'POST' }); toast('✓ All approved'); await load(); Notify.refresh(); } catch (err) { toast(err.message, true); }
+          } }, '✓ Approve all ' + waiting.length)));
+        waiting.forEach((e) => view.append(approvalCard(e)));
+      }
+    } else if (!reviewed.length) {
+      view.append(h('div', { class: 'card empty-state' }, 'Nothing reviewed in the last 30 days.'));
+    } else {
+      const card = h('section', { class: 'card' });
+      reviewed.forEach((e) => {
+        const rej = rejectControl(e, 'Change to ✗ Reject');
+        card.append(h('div', { class: 'rev' },
+          App.entryRow(e, { showMember: true, showApproved: true }),
+          e.status === 'approved' ? h('div', null, rej.open, rej.box)
+            : h('button', { class: 'btn small', onclick: () => review(e, 'approved') }, 'Change to ✓ Approve')));
+      });
+      view.append(card);
+    }
+    root.replaceChildren(h('div', { class: 'seg', role: 'tablist' }, tab('waiting', '⏳ Waiting', waiting.length), tab('done', 'Reviewed')), view);
+  }
+
+  // ---------- add an expense for someone (it is approved straight away) ----------
+
+  const addForm = { photo: null };
+
+  function renderAddExpense() {
+    const root = $('pageAddexpense');
+    if (root.dataset.ready === members.map((m) => m.id + m.active).join()) return; // keep what is being typed
+    root.dataset.ready = members.map((m) => m.id + m.active).join();
+    const people = active();
+    const who = h('select', { 'aria-label': 'Who is this for?' }, people.map((m) => h('option', { value: m.id }, m.name)));
+    const amount = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0', 'aria-label': 'Amount' });
+    const note = h('textarea', { rows: 2, maxlength: 500, placeholder: 'e.g. Electricity bill', 'aria-label': 'Note' });
+    const date = h('input', { type: 'date', value: todayStr(), max: todayStr(), 'aria-label': 'Date' });
+    const preview = h('div', { class: 'chat-preview', hidden: true });
+    const fileGal = h('input', { type: 'file', accept: 'image/*', hidden: true });
+    const err = h('p', { class: 'error', role: 'alert', hidden: true });
+    const save = h('button', { type: 'submit', class: 'btn' }, 'Add expense');
+
+    function paint() {
+      preview.hidden = !addForm.photo;
+      preview.replaceChildren();
+      if (addForm.photo) preview.append(h('div', { class: 'pv' }, h('img', { src: addForm.photo.thumb || addForm.photo.photo, alt: 'Photo' }),
+        h('button', { type: 'button', class: 'link danger small', onclick: () => { addForm.photo = null; paint(); } }, 'Remove photo')));
+    }
+    fileGal.addEventListener('change', async () => {
+      const f = fileGal.files[0]; fileGal.value = '';
+      if (!f) return;
+      try { addForm.photo = await Camera.fromFile(f); paint(); } catch { toast('Sorry, that photo could not be opened.', true); }
+    });
+
+    const form = h('form', { class: 'card', novalidate: true },
+      people.length ? null : h('p', { class: 'muted' }, 'Add a family member first (Family members), then you can add expenses for them.'),
+      h('label', { class: 'field' }, h('span', { class: 'label' }, 'Who is it for?'), who),
+      h('div', { class: 'field' }, h('span', { class: 'label' }, 'Photo ', h('span', { class: 'opt' }, '(bill, item, optional)')),
+        h('div', { class: 'crow' },
+          h('button', { type: 'button', class: 'cbtn', onclick: async () => {
+            try { const d = await Camera.take(); if (d) { addForm.photo = d; paint(); } } catch { fileGal.click(); }
+          } }, '\u{1F4F7} Camera'),
+          h('button', { type: 'button', class: 'cbtn', onclick: () => fileGal.click() }, '\u{1F5BC} Photos')),
+        preview, fileGal),
+      h('label', { class: 'field' }, h('span', { class: 'label' }, 'How much?'), amount),
+      h('label', { class: 'field' }, h('span', { class: 'label' }, 'Note ', h('span', { class: 'opt' }, '(optional)')), note),
+      h('label', { class: 'field' }, h('span', { class: 'label' }, 'Date'), date),
+      err, save);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      err.hidden = true;
+      const n = Number(amount.value.replace(/[,\s]/g, '').replace(/[^\d.]/g, ''));
+      if (!people.length) { err.textContent = 'Add a family member first.'; err.hidden = false; return; }
+      if (!(n > 0)) { err.textContent = 'Please type how much it cost.'; err.hidden = false; amount.focus(); return; }
+      save.disabled = true; save.textContent = 'Saving…';
+      try {
+        await api('/api/expenses', { method: 'POST', body: JSON.stringify({
+          memberId: who.value, amount: n, note: note.value, date: date.value || todayStr(),
+          photo: addForm.photo && addForm.photo.photo, thumb: addForm.photo && addForm.photo.thumb,
+        }) });
+        const name = (people.find((m) => m.id === who.value) || {}).name;
+        amount.value = ''; note.value = ''; date.value = todayStr(); addForm.photo = null; paint();
+        toast('✓ Added ' + money(n) + ' for ' + name + '. They have been told.');
+        await load();
+      } catch (e) { err.textContent = e.message; err.hidden = false; }
+      finally { save.disabled = false; save.textContent = 'Add expense'; }
+    });
+    root.replaceChildren(form);
   }
 
   // ---------- load + navigation ----------
@@ -378,6 +536,8 @@ This only works for someone who has no expenses yet. Otherwise switch them off i
     renderMonth();
     renderMonths();
     renderMembers();
+    renderApprovals();
+    renderAddExpense();
   }
 
   async function load() {

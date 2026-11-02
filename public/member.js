@@ -243,7 +243,7 @@
     const box = $('recent');
     box.replaceChildren();
     if (!expenses.length) box.append(h('div', { class: 'empty-state' }, 'Nothing here yet. Your first expense will show up here.'));
-    expenses.slice(0, RECENT).forEach((e) => box.append(App.entryRow(e, { fresh: e.id === freshId, onDelete: remove })));
+    expenses.slice(0, RECENT).forEach((e) => box.append(App.entryRow(e, { fresh: e.id === freshId, showApproved: true, onDelete: remove, onEdit: edit })));
     $('seeAll').hidden = expenses.length <= RECENT;
     $('recentCard').hidden = false;
   }
@@ -265,7 +265,7 @@
         box.append(h('div', { class: 'dayhead' }, h('span', null, App.prettyDate(e.date)), h('span', null, money(dayTotal))));
         lastDate = e.date;
       }
-      box.append(App.entryRow(e, { showDate: false, onDelete: remove }));
+      box.append(App.entryRow(e, { showDate: false, showApproved: true, onDelete: remove, onEdit: edit }));
     }
   }
 
@@ -273,6 +273,8 @@
   $('nextMonth').addEventListener('click', () => {
     if (listMonth < App.todayStr().slice(0, 7)) { listMonth = App.addMonths(listMonth, 1); renderList(); }
   });
+
+  const edit = (e) => ExpenseEditor.open(e, { isAdmin: false, onSaved: () => load() });
 
   async function remove(e) {
     const what = [e.note, money(e.amount)].filter(Boolean).join(' — ');
@@ -447,7 +449,8 @@
       $('date').hidden = true;
       await load();
       const s = App.budgetStats(expenses, me.budget);
-      toast(!s.hasBudget ? '✓ Saved!' : s.over ? `✓ Saved. You are ${money(-s.left)} over budget.` : `✓ Saved! ${money(s.left)} left this month.`);
+      const tail = !s.hasBudget ? '' : s.over ? ` You are ${money(-s.left)} over budget.` : ` ${money(s.left)} left this month.`;
+      toast('✓ Saved, waiting for approval.' + tail);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       if (err.status === 401) { location.reload(); return; }

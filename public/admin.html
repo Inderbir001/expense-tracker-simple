@@ -32,6 +32,8 @@
         </div>
         <a href="#overview" data-page="overview"><span class="ico">&#128202;</span> Overview</a>
         <a href="#expenses" data-page="expenses"><span class="ico">&#129534;</span> All expenses</a>
+        <a href="#approvals" data-page="approvals"><span class="ico">&#9989;</span> Approvals <span class="badge" id="apBadge" hidden></span></a>
+        <a href="#addexpense" data-page="addexpense"><span class="ico">&#10133;</span> Add expense</a>
         <a href="#messages" data-page="messages"><span class="ico">&#128172;</span> Messages <span class="badge" id="msgBadge" hidden></span></a>
         <a href="#ration" data-page="ration"><span class="ico">&#128722;</span> Ration list <span class="badge" id="rationBadge" hidden></span></a>
         <a href="#members" data-page="members"><span class="ico">&#128106;</span> Family members</a>
@@ -63,6 +65,7 @@
           <div class="stat primary"><div class="k">Total so far</div><div class="v" id="sAll"></div></div>
         </div>
 
+        <a href="#approvals" class="card mini-ration" id="miniApprovals" hidden><span class="ico">&#9989;</span><span><strong id="miniApprovalsTitle">Approvals</strong><br><span class="muted small">Tap to approve or reject</span></span></a>
         <a href="#messages" class="card mini-ration" id="miniMessages" hidden><span class="ico">&#128172;</span><span><strong id="miniMessagesTitle">Messages</strong><br><span class="muted small">Tap to read and reply</span></span></a>
         <a href="#ration" class="card mini-ration" id="miniRation" hidden><span class="ico">&#128722;</span><span><strong id="miniRationTitle">Ration list</strong><br><span class="muted small">Tap to see what to order</span></span></a>
 
@@ -100,6 +103,12 @@
 
       <!-- ---- ration list ---- -->
       <main id="pageRation" hidden></main>
+
+      <!-- ---- approvals ---- -->
+      <main id="pageApprovals" hidden></main>
+
+      <!-- ---- add an expense for someone ---- -->
+      <main id="pageAddexpense" hidden></main>
 
       <!-- ---- messages ---- -->
       <main id="pageMessages" hidden></main>
@@ -165,6 +174,7 @@
   <script src="/camera.js"></script>
   <script src="/notify.js"></script>
   <script src="/messages.js"></script>
+  <script src="/editor.js"></script>
   <script src="/ration.js"></script>
   <script src="/admin.js"></script>
 </body>

@@ -12,7 +12,8 @@ const App = (() => {
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const todayStr = () => ymd(new Date());
   const parseYmd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
-  const sum = (list) => list.reduce((s, e) => s + e.amount, 0);
+  // rejected expenses are not counted anywhere
+  const sum = (list) => list.reduce((s, e) => s + (e.status === 'rejected' ? 0 : e.amount), 0);
 
   function money(n) {
     const v = Number(n) || 0;
@@ -123,32 +124,40 @@ const App = (() => {
     const dlg = h('dialog', { class: 'viewer' },
       h('img', { src, alt: caption || 'Photo' }),
       caption ? h('div', { class: 'cap' }, caption) : null,
-      h('button', { class: 'btn', onclick: () => dlg.close() }, 'Close'),
+      h('button', { class: 'btn', onclick: () => closeViewer() }, 'Close'),
     );
+    const closeViewer = () => { if (dlg.open) dlg.close(); dlg.remove(); };
     dlg.addEventListener('close', () => dlg.remove());
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) closeViewer(); });
     document.body.append(dlg);
     dlg.showModal();
   }
 
-  // One expense row. opts: onDelete (shows Remove), showDate (default true), showMember (admin view).
+  // One expense row. opts: onDelete (Remove), onEdit (Edit), showDate (default true), showMember (admin view),
+  // showApproved (members like to see the tick), fresh.
   function entryRow(e, opts = {}) {
     const thumb = e.thumb
       ? h('button', {
           class: 'thumb', style: `background-image:url('${e.thumb}')`, 'aria-label': 'View photo',
           onclick: () => viewPhoto(e.photo || e.thumb, [e.note, money(e.amount)].filter(Boolean).join(' — ')),
         })
-      : h('div', { class: 'thumb none', 'aria-hidden': 'true' }, '\u{1F9FE}');
-    const when = [opts.showMember ? e.memberName : null, opts.showDate === false ? null : prettyDate(e.date)]
+      : h('div', { class: 'thumb none', 'aria-hidden': 'true' }, '🧾');
+    const when = [opts.showMember ? e.memberName : null, opts.showDate === false ? null : prettyDate(e.date), e.edited && opts.showMember ? 'edited' : null]
       .filter(Boolean).join(' · ');
+    const status = e.status || 'approved';
+    const chip = status === 'pending' ? h('span', { class: 'chip-status pending' }, '⏳ Waiting for approval')
+      : status === 'rejected' ? h('span', { class: 'chip-status rejected' }, '✗ Rejected' + (e.reviewNote ? ': ' + e.reviewNote : ''))
+      : opts.showApproved ? h('span', { class: 'chip-status approved' }, '✓ Approved') : null;
     return h('div', { class: 'entry' + (opts.fresh ? ' fresh' : '') },
       thumb,
       h('div', { class: 'body' },
         h('div', { class: 'note' + (e.note ? '' : ' empty') }, e.note || 'No note'),
         h('div', { class: 'when' }, when),
-        opts.onDelete ? h('button', { class: 'link danger small', onclick: () => opts.onDelete(e) }, 'Remove') : null,
-      ),
-      h('div', { class: 'amt' }, money(e.amount)),
+        chip,
+        h('div', { class: 'eactions' },
+          opts.onEdit ? h('button', { class: 'link small', onclick: () => opts.onEdit(e) }, 'Edit') : null,
+          opts.onDelete ? h('button', { class: 'link danger small', onclick: () => opts.onDelete(e) }, 'Remove') : null)),
+      h('div', { class: 'amt' + (status === 'rejected' ? ' struck' : '') }, money(e.amount)),
     );
   }
 
